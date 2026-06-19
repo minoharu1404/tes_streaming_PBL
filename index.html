@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Status Mesin CIM</title>
     <style>
-        /* Styling sederhana agar tampilan tombol lebih rapi di tengah */
         body {
             display: flex;
             justify-content: center;
@@ -20,7 +19,7 @@
             font-size: 18px;
             font-weight: bold;
             color: white;
-            background-color: #d9534f; /* Warna merah ala tombol error */
+            background-color: #d9534f;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -37,42 +36,37 @@
     <button id="tombolError">Trigger Error CIM</button>
 
     <script>
-        const tombol = document.getElementById('tombolError');
-
-        // Meminta izin notifikasi ke browser saat halaman pertama kali dibuka
-        if ("Notification" in window) {
-            Notification.requestPermission();
+        // 1. Daftarkan Service Worker saat halaman dimuat
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+            .then(function(registration) {
+                console.log('Service Worker terdaftar dengan scope:', registration.scope);
+            }).catch(function(error) {
+                console.log('Pendaftaran Service Worker gagal:', error);
+            });
         }
+
+        const tombol = document.getElementById('tombolError');
 
         tombol.addEventListener('click', () => {
             const pesanError = "ERROR MESIN CIM TIDAK BERJALAN";
 
-            // 1. Memunculkan pop-up alert standar di web
+            // Munculkan alert web terlebih dahulu
             alert(pesanError);
 
-            // 2. Memunculkan notifikasi di bar notifikasi HP/PC
-            if ("Notification" in window) {
-                if (Notification.permission === "granted") {
-                    // Jika izin sudah diberikan, langsung tampilkan notifikasi
-                    new Notification("Peringatan Sistem", {
-                        body: pesanError,
-                        // Kamu bisa ganti link gambar di bawah dengan URL icon milikmu sendiri
-                        icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png" 
-                    });
-                } else if (Notification.permission !== "denied") {
-                    // Jika belum ada izin, minta izin dulu saat tombol ditekan
-                    Notification.requestPermission().then(permission => {
-                        if (permission === "granted") {
-                            new Notification("Peringatan Sistem", {
-                                body: pesanError
+            // 2. Gunakan Service Worker untuk mengirim notifikasi di HP & PC
+            if ("Notification" in window && navigator.serviceWorker) {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") {
+                        navigator.serviceWorker.ready.then(function(registration) {
+                            registration.showNotification("Peringatan Sistem", {
+                                body: pesanError,
+                                icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
+                                vibrate: [200, 100, 200] // Tambahan fitur getar untuk HP
                             });
-                        }
-                    });
-                } else {
-                    console.log("Izin notifikasi diblokir oleh pengaturan browser.");
-                }
-            } else {
-                console.log("Browser ini tidak mendukung notifikasi sistem.");
+                        });
+                    }
+                });
             }
         });
     </script>
