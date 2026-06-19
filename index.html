@@ -1,45 +1,74 @@
-<script>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uji Coba Notif CIM</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        button {
+            padding: 20px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            background-color: #d9534f;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        button:hover { background-color: #c9302c; }
+    </style>
+</head>
+<body>
+
+    <button id="tombolError">Test Notif HP</button>
+
+    <script>
         // 1. Daftarkan Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('SW Registered!'))
-                .catch(err => console.error('SW Registration failed!', err));
+                .then(() => console.log('Service Worker siap!'))
+                .catch(err => console.error('Service Worker gagal:', err));
         }
 
         const tombol = document.getElementById('tombolError');
 
         tombol.addEventListener('click', async () => {
-            const pesanError = "ERROR MESIN CIM TIDAK BERJALAN";
-
-            // Cek apakah browser mendukung notifikasi
-            if (!("Notification" in window)) {
-                alert("Browser tidak mendukung notifikasi.\n\n" + pesanError);
+            // Cek dukungan browser
+            if (!("Notification" in window) || !('serviceWorker' in navigator)) {
+                console.log("Browser tidak mendukung notifikasi sistem.");
                 return;
             }
 
-            // Minta izin jika belum pernah ditanya
-            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                await Notification.requestPermission();
+            // Minta izin jika belum ada
+            let permission = Notification.permission;
+            if (permission !== "granted") {
+                permission = await Notification.requestPermission();
             }
 
-            // Jika izin diberikan, jalankan notifikasi sistem HP DULU
-            if (Notification.permission === "granted" && 'serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then((registration) => {
-                    registration.showNotification("Peringatan Sistem", {
-                        body: pesanError,
-                        icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
-                        vibrate: [200, 100, 200, 100, 200] // Bikin HP bergetar 
-                    });
-                    
-                    // Beri jeda 0.5 detik sebelum memunculkan pop-up web, 
-                    // agar notif di bar HP punya waktu untuk tereksekusi.
-                    setTimeout(() => {
-                        alert(pesanError);
-                    }, 500); 
+            // Jika diizinkan, Tembak Notifikasi via Service Worker
+            if (permission === "granted") {
+                const swRegistration = await navigator.serviceWorker.ready;
+                swRegistration.showNotification("⚠️ PERINGATAN SISTEM", {
+                    body: "ERROR MESIN CIM TIDAK BERJALAN",
+                    icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
+                    vibrate: [200, 100, 200, 100, 200], // Pola getaran HP
+                    requireInteraction: true // Notif tidak akan hilang sebelum di-swipe/diklik (berguna untuk error mesin)
                 });
+                console.log("Notifikasi berhasil dipicu!");
             } else {
-                // Fallback jika izin notif diblokir user
-                alert(pesanError);
+                console.log("Izin notifikasi ditolak oleh user.");
             }
         });
     </script>
+
+</body>
+</html>
