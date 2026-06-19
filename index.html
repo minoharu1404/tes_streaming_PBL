@@ -1,75 +1,45 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Mesin CIM</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f9;
-            font-family: Arial, sans-serif;
-        }
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-            background-color: #d9534f;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #c9302c;
-        }
-    </style>
-</head>
-<body>
-
-    <button id="tombolError">Trigger Error CIM</button>
-
-    <script>
-        // 1. Daftarkan Service Worker saat halaman dimuat
+<script>
+        // 1. Daftarkan Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
-            .then(function(registration) {
-                console.log('Service Worker terdaftar dengan scope:', registration.scope);
-            }).catch(function(error) {
-                console.log('Pendaftaran Service Worker gagal:', error);
-            });
+                .then(reg => console.log('SW Registered!'))
+                .catch(err => console.error('SW Registration failed!', err));
         }
 
         const tombol = document.getElementById('tombolError');
 
-        tombol.addEventListener('click', () => {
+        tombol.addEventListener('click', async () => {
             const pesanError = "ERROR MESIN CIM TIDAK BERJALAN";
 
-            // Munculkan alert web terlebih dahulu
-            alert(pesanError);
+            // Cek apakah browser mendukung notifikasi
+            if (!("Notification" in window)) {
+                alert("Browser tidak mendukung notifikasi.\n\n" + pesanError);
+                return;
+            }
 
-            // 2. Gunakan Service Worker untuk mengirim notifikasi di HP & PC
-            if ("Notification" in window && navigator.serviceWorker) {
-                Notification.requestPermission().then(function (permission) {
-                    if (permission === "granted") {
-                        navigator.serviceWorker.ready.then(function(registration) {
-                            registration.showNotification("Peringatan Sistem", {
-                                body: pesanError,
-                                icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
-                                vibrate: [200, 100, 200] // Tambahan fitur getar untuk HP
-                            });
-                        });
-                    }
+            // Minta izin jika belum pernah ditanya
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                await Notification.requestPermission();
+            }
+
+            // Jika izin diberikan, jalankan notifikasi sistem HP DULU
+            if (Notification.permission === "granted" && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then((registration) => {
+                    registration.showNotification("Peringatan Sistem", {
+                        body: pesanError,
+                        icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
+                        vibrate: [200, 100, 200, 100, 200] // Bikin HP bergetar 
+                    });
+                    
+                    // Beri jeda 0.5 detik sebelum memunculkan pop-up web, 
+                    // agar notif di bar HP punya waktu untuk tereksekusi.
+                    setTimeout(() => {
+                        alert(pesanError);
+                    }, 500); 
                 });
+            } else {
+                // Fallback jika izin notif diblokir user
+                alert(pesanError);
             }
         });
     </script>
-
-</body>
-</html>
