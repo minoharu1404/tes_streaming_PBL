@@ -1,10 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Live Camera</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Mesin CIM</title>
+    <style>
+        /* Styling sederhana agar tampilan tombol lebih rapi di tengah */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background-color: #d9534f; /* Warna merah ala tombol error */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #c9302c;
+        }
+    </style>
 </head>
 <body>
-    <h2>Streaming Kamera Laptop</h2>
-    <img src="https://houses-norfolk-improvement-pitch.trycloudflare.com/video_feed" width="640">
+
+    <button id="tombolError">Trigger Error CIM</button>
+
+    <script>
+        const tombol = document.getElementById('tombolError');
+
+        // Meminta izin notifikasi ke browser saat halaman pertama kali dibuka
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+
+        tombol.addEventListener('click', () => {
+            const pesanError = "ERROR MESIN CIM TIDAK BERJALAN";
+
+            // 1. Memunculkan pop-up alert standar di web
+            alert(pesanError);
+
+            // 2. Memunculkan notifikasi di bar notifikasi HP/PC
+            if ("Notification" in window) {
+                if (Notification.permission === "granted") {
+                    // Jika izin sudah diberikan, langsung tampilkan notifikasi
+                    new Notification("Peringatan Sistem", {
+                        body: pesanError,
+                        // Kamu bisa ganti link gambar di bawah dengan URL icon milikmu sendiri
+                        icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png" 
+                    });
+                } else if (Notification.permission !== "denied") {
+                    // Jika belum ada izin, minta izin dulu saat tombol ditekan
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            new Notification("Peringatan Sistem", {
+                                body: pesanError
+                            });
+                        }
+                    });
+                } else {
+                    console.log("Izin notifikasi diblokir oleh pengaturan browser.");
+                }
+            } else {
+                console.log("Browser ini tidak mendukung notifikasi sistem.");
+            }
+        });
+    </script>
+
 </body>
 </html>
